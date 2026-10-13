@@ -1,0 +1,746 @@
+<title>Image Art Teams</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Figtree:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: one phone-width column of call sheets. A date block leads each job; the job page reads top to bottom in the order a photographer needs it on the day. */
+:root{
+  --bg:#EDF1F0; --surface:#FFFFFF; --ink:#15201E; --muted:#586866; --line:#D3DBD9;
+  --accent:#0B6B63; --accent-ink:#FFFFFF; --accent-soft:#DAEDEA;
+  --flag:#9A4A06; --flag-soft:#FBEBCB; --ok:#1F7A3D;
+  --display:"Bricolage Grotesque","Trebuchet MS",system-ui,sans-serif;
+  --body:"Figtree",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#0F1514; --surface:#18201E; --ink:#E7EEEC; --muted:#93A3A0; --line:#2A3633;
+  --accent:#4FC4B6; --accent-ink:#06211E; --accent-soft:#15302C;
+  --flag:#F2B04A; --flag-soft:#38290C; --ok:#6BCB8B; color-scheme:dark } }
+:root[data-theme="dark"]{
+  --bg:#0F1514; --surface:#18201E; --ink:#E7EEEC; --muted:#93A3A0; --line:#2A3633;
+  --accent:#4FC4B6; --accent-ink:#06211E; --accent-soft:#15302C;
+  --flag:#F2B04A; --flag-soft:#38290C; --ok:#6BCB8B; color-scheme:dark }
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.5}
+.app{max-width:680px;margin:0 auto;padding-inline:16px;padding-block:0 48px;display:flex;flex-direction:column;gap:16px}
+h1,h2,h3{font-family:var(--display);margin:0;text-wrap:balance;line-height:1.15}
+p{margin:0}
+a{color:var(--accent)}
+button,select,input,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 16px;padding-block:12px;border-bottom:1px solid var(--line)}
+.brand{font-family:var(--display);font-weight:700;font-size:20px}
+.who{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--muted)}
+.who select{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:6px 8px;max-width:100%}
+.proto{font-size:14px;color:var(--muted)}
+
+.tabs{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.tab{background:none;border:1px solid var(--line);border-radius:999px;padding:6px 14px;cursor:pointer;font-weight:500}
+.tab[aria-current="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.count{font-family:var(--mono);font-size:12px;background:var(--flag-soft);color:var(--flag);border-radius:999px;padding:1px 7px;margin-left:4px}
+.spacer{flex:1}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;background:var(--accent);color:var(--accent-ink);border:1px solid var(--accent);border-radius:8px;padding:9px 14px;font-weight:600;cursor:pointer;text-decoration:none}
+.btn.ghost{background:transparent;color:var(--accent);border-color:var(--line)}
+.btn.small{padding:5px 10px;font-size:14px}
+.linkbtn{background:none;border:0;padding:0;color:var(--accent);cursor:pointer;font-weight:500}
+
+.list{display:flex;flex-direction:column;gap:10px}
+.job{display:grid;grid-template-columns:64px 1fr;gap:14px;width:100%;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px;cursor:pointer}
+.job:hover{border-color:var(--accent)}
+.dateblock{font-family:var(--mono);text-align:center;display:flex;flex-direction:column;justify-content:center;border-right:1px solid var(--line);padding-right:14px;line-height:1.2}
+.dateblock .dow,.dateblock .mon{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.dateblock .day{font-size:26px;font-weight:600}
+.jobmain{min-width:0;display:flex;flex-direction:column;gap:4px}
+.jobmain h3{font-size:18px}
+.meta{font-size:14px;color:var(--muted)}
+.time{font-family:var(--mono);font-size:14px;font-variant-numeric:tabular-nums}
+.pill{display:inline-block;font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;border-radius:999px;padding:2px 9px;background:var(--flag-soft);color:var(--flag)}
+.pill.quiet{background:var(--accent-soft);color:var(--accent)}
+.rowwrap{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center}
+
+.sheet{display:flex;flex-direction:column;gap:20px}
+.sheet-head{display:flex;flex-direction:column;gap:8px}
+.sheet-head h1{font-size:clamp(26px,6vw,34px)}
+.calltimes{display:flex;flex-wrap:wrap;gap:8px 28px;border-block:1px solid var(--line);padding-block:12px}
+.calltimes div{display:flex;flex-direction:column}
+.label{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.calltimes .v{font-family:var(--mono);font-size:20px;font-weight:600;font-variant-numeric:tabular-nums}
+.actions{display:flex;flex-wrap:wrap;gap:8px}
+.sec{display:flex;flex-direction:column;gap:8px}
+.sec h2{font-size:18px}
+.kv{display:grid;grid-template-columns:110px 1fr;gap:6px 12px}
+.kv dt{color:var(--muted);font-size:14px}
+.kv dd{margin:0;min-width:0;overflow-wrap:anywhere}
+dl{margin:0}
+.sel{user-select:all;font-family:var(--mono);font-size:15px}
+.note{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;white-space:pre-wrap}
+.alert{background:var(--flag-soft);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+.alert strong{color:var(--flag)}
+.alert ul,.plain{margin:0;padding-left:18px}
+.checks{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.checks label{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-bottom:1px solid var(--line);cursor:pointer}
+.checks input{width:18px;height:18px;margin-top:3px;accent-color:var(--accent)}
+.checks input:checked + span{color:var(--muted);text-decoration:line-through}
+.crew{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.crew li{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline}
+.deliv{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.deliv li{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line)}
+.deliv label{display:flex;gap:10px;align-items:center;cursor:pointer;min-width:0}
+.deliv input[type="checkbox"]{width:18px;height:18px;accent-color:var(--accent)}
+.inp{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:5px 8px;max-width:100%}
+fieldset.pick{flex-direction:column;flex-wrap:nowrap;gap:12px;background:var(--surface)}
+fieldset.pick label{align-items:flex-start;gap:10px;cursor:pointer}
+fieldset.pick input{margin-top:4px;accent-color:var(--accent)}
+.paper{background:var(--surface);border:1px solid var(--line);padding:28px clamp(16px,5vw,40px);display:flex;flex-direction:column;gap:18px}
+.boxes{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.boxes li{display:flex;gap:10px;align-items:flex-start}
+.box{flex:none;width:16px;height:16px;border:1.5px solid var(--ink);margin-top:4px;font-size:12px;line-height:13px;text-align:center}
+.sign{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:24px;margin-top:20px}
+.sign span{border-top:1px solid var(--ink);padding-top:4px;font-size:13px;color:var(--muted)}
+.pickbox{border:1px solid var(--line);border-radius:10px;padding:10px 14px}
+.pickbox > * + *{margin-top:12px}
+.pickbox summary{cursor:pointer;font-weight:600;color:var(--accent)}
+.crew select,.pickbox select{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:5px 8px}
+.seen{font-size:13px;color:var(--ok)} .unseen{font-size:13px;color:var(--flag)}
+.photos{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+.photo{display:flex;flex-direction:column;gap:4px;min-width:0;margin:0}
+.photo .img{aspect-ratio:4/5;border-radius:8px;overflow:hidden;max-width:100%;display:flex;align-items:flex-end;padding:8px;font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#fff}
+.photo img{width:100%;aspect-ratio:4/5;object-fit:cover;border-radius:8px;display:block}
+.photo figcaption{font-size:13px;color:var(--muted)}
+
+.preview{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:12px}
+.msg{border-left:3px solid var(--accent);padding-left:12px;font-size:14px;display:flex;flex-direction:column;gap:2px}
+.msg .body{white-space:pre-wrap}
+
+form{display:flex;flex-direction:column;gap:14px}
+.field{display:flex;flex-direction:column;gap:4px;min-width:0}
+.field input,.field textarea,.field select{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:9px 10px;width:100%}
+.field textarea{min-height:88px;resize:vertical}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px}
+.hint{font-size:13px;color:var(--muted)}
+fieldset{border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin:0;display:flex;flex-wrap:wrap;gap:8px 18px}
+legend{padding:0 6px}
+fieldset label{display:flex;gap:6px;align-items:center}
+.feed{display:flex;flex-direction:column;gap:10px}
+.feed article{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:6px}
+.empty{color:var(--muted);padding:24px 0}
+</style>
+
+<div class="app">
+  <header class="top">
+    <div class="brand">Image Art Teams</div>
+    <label class="who" for="whoSel">Viewing as
+      <select id="whoSel"></select>
+    </label>
+  </header>
+  <p class="proto">Prototype with example jobs and people. Edits last until you reload, and no emails, texts or calendar events are sent.</p>
+  <nav class="tabs" id="tabs" aria-label="Sections"></nav>
+  <main id="main"></main>
+</div>
+
+<script>
+const PEOPLE=[
+  {id:'dalia',name:'Dalia Okafor',role:'photographer'},
+  {id:'marcus',name:'Marcus Renn',role:'photographer'},
+  {id:'priya',name:'Priya Vaidya',role:'photographer'},
+  {id:'tomas',name:'Tomás Elizondo',role:'photographer'},
+  {id:'keisha',name:'Keisha Lund',role:'assistant'},
+  {id:'ben',name:'Ben Arroyo',role:'assistant'}
+];
+const OFFICE=[
+  {id:'admin',name:'Studio manager (you)',short:'Studio manager',ini:'SM'},
+  {id:'office2',name:'Carla Whitfield, office',short:'Carla Whitfield',ini:'CW'}
+];
+const TEMPLATE=['ID Cards','Sticker Thumbnails','Picture Packages Delivered','PowerSchool file sent'];
+let catalog=TEMPLATE.concat(['Yearbook portraits sent','Retake day photos delivered','Class composites delivered','Team and individual prints delivered','Coach and staff gift prints']);
+let equipCatalog=['Strobe with stand','Umbrella','36 in octabox','White reflector','Backdrop stand','Gray seamless, 9 ft','Blue mottled backdrop','Posing stool','Barcode scanner','Tether laptop and cable','Extension cords and gaffer tape','Team bench risers','Battery pack for strobe','Spare camera batteries and cards'];
+let kits=[
+  {name:'School portrait station',items:['Strobe with stand','Umbrella','White reflector','Blue mottled backdrop','Backdrop stand','Posing stool','Barcode scanner']},
+  {name:'League photo day',items:['Team bench risers','Strobe with stand','Battery pack for strobe','Spare camera batteries and cards']}
+];
+const unavail={dalia:['2026-10-29'],marcus:['2026-10-24'],keisha:['2026-11-03']};
+const reminders={dayBefore:true,time:'17:00',nudge:true,nudgeDays:2};
+PEOPLE.forEach(p=>{p.email=p.id+'@example.com';});
+function addDays(iso,n){const d=pd(iso),p=x=>String(x).padStart(2,'0');d.setDate(d.getDate()+n);return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate());}
+const TODAY='2026-10-12';
+function todayISO(){const n=new Date(),p=x=>String(x).padStart(2,'0');return n.getFullYear()+'-'+p(n.getMonth()+1)+'-'+p(n.getDate());}
+const P=id=>PEOPLE.find(p=>p.id===id);
+let jobs=[
+  {id:'j1',title:'Harlow & Finch staff headshots',client:'Harlow & Finch LLP',type:'Corporate headshots',date:'2026-10-14',start:'09:00',end:'12:30',
+   address:'410 Mercer Street, Suite 1200, Columbus, OH 43215',setup:'Conference Room B on the 12th floor. Shoot toward the blank north wall, away from the windows.',
+   access:'Park in the Mercer Street garage, level 2. Load in through the freight elevator on the alley side and ask security for a badge.',
+   contact:{name:'Renee Castellano',role:'Office manager',phone:'(555) 010-4471'},
+   equipment:['2 strobes with stands','9 ft gray seamless and backdrop stand','36 in octabox and a white reflector','85mm and 24-70mm lenses','Tether laptop and cable','Posing stool','Gaffer tape and extension cords'],
+   lead:'dalia',crew:['dalia','marcus'],
+   notes:'28 people in 6-minute slots. Renee has the sign-up sheet.\nPartners want a second, more relaxed frame without jackets.\nMatch last year\'s crop: mid-chest up, a little headroom.',
+   photos:[{cap:'Gray seamless, soft key from camera left',h:205},{cap:'Relaxed frame, jacket off',h:28},{cap:'Crop reference from last year',h:160}]},
+  {id:'j2',title:'Nguyen and Abbott wedding',client:'Linh Nguyen and Cole Abbott',type:'Wedding',date:'2026-10-17',start:'14:00',end:'22:00',
+   address:'2280 Cedar Hollow Road, Granville, OH 43023',setup:'Getting ready in the farmhouse upstairs. Ceremony on the east lawn under the oak. Reception in the barrel room.',
+   access:'Use the staff gravel lot behind the barn, not the guest lot. The last mile is unpaved, so allow 10 extra minutes.',
+   contact:{name:'Marisol Trent',role:'Wedding planner',phone:'(555) 010-8820'},
+   equipment:['2 camera bodies each','35mm, 50mm, 85mm and 70-200mm','Second flash and spare batteries','2 off-camera flashes with stands for the reception','Video light for the first dance','Rain covers and clear umbrellas'],
+   lead:'priya',crew:['priya','dalia','tomas'],
+   notes:'Ceremony at 4:30 PM. Sunset is 6:48 PM, so couple portraits run 6:05 to 6:40 in the vineyard rows.\nNo flash during the ceremony.\nFamily formals list is with Marisol. Grandmother uses a wheelchair, so keep formals on the paved terrace.',
+   photos:[{cap:'Backlit rows at golden hour',h:38},{cap:'Wide ceremony frame from the aisle',h:120},{cap:'Barrel room, bounced flash and ambient',h:12},{cap:'Detail flat lay on linen',h:330}]},
+  {id:'j3',title:'Listing shoot, 77 Alder Court',client:'Brightwater Realty',type:'Real estate',date:'2026-10-20',start:'10:30',end:'12:00',
+   address:'77 Alder Court, Dublin, OH 43017',setup:'Start with exteriors while the front is in sun, then work the main floor before upstairs.',
+   access:'Street parking only. Lockbox is on the side gate and the agent texts the code that morning.',
+   contact:{name:'Owen Pruitt',role:'Listing agent',phone:'(555) 010-3306'},
+   equipment:['16-35mm lens','Tripod with geared head','Flash for window pulls','Drone and 3 batteries'],
+   lead:'marcus',crew:['marcus'],
+   notes:'25 finals plus 5 drone frames. Turn on every light and open all blinds.\nSkip the garage and the basement storage room.',
+   photos:[{cap:'Kitchen from the corner, verticals straight',h:190},{cap:'Front elevation with the full driveway',h:95}]},
+  {id:'j4',title:'Lakeshore Arts Fund gala',client:'Lakeshore Arts Fund',type:'Event',date:'2026-10-23',start:'17:30',end:'22:30',
+   address:'One Harbor Plaza, Grand Ballroom, Cleveland, OH 44114',setup:'Step-and-repeat goes left of the ballroom doors. Second shooter roams the reception and the stage program.',
+   access:'Loading dock on Pier Street, open until 5:00 PM. After that, use the hotel valet and keep the ticket.',
+   contact:{name:'Yusuf Ademola',role:'Events director',phone:'(555) 010-6159'},
+   equipment:['Step-and-repeat lighting: 2 strobes and umbrellas','On-camera flash with diffuser','24-70mm and 70-200mm','Monopod for the stage program','Black attire'],
+   lead:'tomas',crew:['tomas','marcus'],
+   notes:'Doors at 6:30 PM, program at 8:00 PM. Yusuf will send a shot list of sponsors and board members.\nDeliver 20 edited selects by 9:00 AM the next morning for their press release.',
+   photos:[{cap:'Step-and-repeat pairs, even light',h:260},{cap:'Speaker at the podium from house left',h:350},{cap:'Candid table shot with room ambience',h:48}]},
+  {id:'j5',title:'Fall menu product shoot',client:'Sorrel Street Bakery',type:'Product and food',date:'2026-10-29',start:'07:00',end:'10:00',
+   address:'318 Sorrel Street, Columbus, OH 43206',setup:'Table by the front window for natural light. The bakery opens at 10:00, so the front has to be clear by 9:45.',
+   access:'Knock at the back door on the alley. One loading space beside the dumpster.',
+   contact:{name:'Imani Brooks',role:'Owner',phone:'(555) 010-9042'},
+   equipment:['100mm macro and 50mm','Diffusion panel and white and black cards','Overhead arm','Linen and slate surfaces'],
+   lead:'priya',crew:['priya'],
+   notes:'12 items, each as an overhead and a 45 degree angle. Square crops for their ordering page.',
+   photos:[{cap:'Overhead on slate with side light',h:22},{cap:'45 degree angle with a shallow background',h:75}]}
+];
+let updates=[
+  {id:'u1',jobId:'j2',at:'Oct 11, 4:12 PM',changes:['Call time: 2:30 PM → 2:00 PM','Equipment added: Second flash and spare batteries'],seen:{priya:true,tomas:true}}
+];
+const state={who:'dalia',tab:'jobs',jobId:null,editing:null,sent:null,packed:{},draftPhotos:[]};
+
+const DOW=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'],MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function pd(s){const a=s.split('-').map(Number);return new Date(a[0],a[1]-1,a[2]);}
+function fmtDate(s){const x=pd(s);return DOW[x.getDay()]+', '+MON[x.getMonth()]+' '+x.getDate();}
+function fmtTime(t){const a=t.split(':').map(Number);const h=a[0]%12||12;return h+':'+String(a[1]).padStart(2,'0')+' '+(a[0]<12?'AM':'PM');}
+function stamp(){const n=new Date();return MON[n.getMonth()]+' '+n.getDate()+', '+fmtTime(n.getHours()+':'+n.getMinutes());}
+const isAdmin=()=>OFFICE.some(o=>o.id===state.who);
+const J=id=>jobs.find(j=>j.id===id);
+J('j2').crew.push('keisha');
+J('j4').crew.push('ben');
+jobs.push(
+  {id:'j6',title:'Westbrook Elementary fall picture day',client:'Westbrook Elementary School',type:'School',date:'2026-10-06',start:'07:30',end:'13:00',
+   address:'1450 Linden Avenue, Westerville, OH 43081',setup:'Gym stage. Two portrait stations side by side, with the line forming along the bleachers.',
+   access:'Park in the staff lot and check in at the front office for visitor badges. Load in through the gym side doors.',
+   contact:{name:'Dana Whitlock',role:'School secretary',phone:'(555) 010-7718'},
+   equipment:['2 portrait stations: strobe, umbrella and fill reflector each','Blue mottled backdrops and stands','Barcode scanners and student cards','Posing stools and combs'],
+   lead:'dalia',crew:['dalia','tomas','keisha','ben'],
+   notes:'Classes come down by grade, starting with kindergarten at 8:00 AM.\nScan each student\'s barcode card before their first frame.',
+   photos:[{cap:'Head and shoulders on the blue backdrop',h:215}],
+   deliverables:[{name:'ID Cards',done:true,date:'2026-10-09',ini:'SM',by:'Studio manager'},{name:'Sticker Thumbnails',done:true,date:'2026-10-08',ini:'CW',by:'Carla Whitfield'},{name:'Picture Packages Delivered',done:false,due:'2026-10-10'},{name:'PowerSchool file sent',done:false,due:'2026-10-20'}]},
+  {id:'j7',title:'Northside Youth Soccer photo day',client:'Northside Youth Soccer League',type:'League',date:'2026-10-24',start:'08:00',end:'14:00',
+   address:'Kessler Fields, 900 Kessler Park Drive, Columbus, OH 43214',setup:'Team photos at the bleachers on field 3. Individual portraits under the pavilion.',
+   access:'Park in the north lot. The league table is by the concession stand.',
+   contact:{name:'Greg Halloran',role:'League coordinator',phone:'(555) 010-2590'},
+   equipment:['Team bench risers','2 strobes with battery packs','Soccer ball props','Order form clipboard and pens'],
+   lead:'marcus',crew:['marcus','priya','keisha'],
+   notes:'22 teams in 15-minute slots. Greg has the schedule.\nTeam photo first, then individuals.',
+   photos:[{cap:'Team on risers, coach at the left',h:110},{cap:'Individual with a foot on the ball',h:140}],
+   deliverables:TEMPLATE.map(n=>({name:n,done:false,due:'2026-11-07'}))}
+);
+jobs.forEach(j=>{j.rsvp={};j.crew.forEach(c=>{j.rsvp[c]={s:'accepted'};});});
+J('j1').rsvp.dalia={s:'pending'};
+J('j4').rsvp.marcus={s:'pending'};
+J('j2').rsvp.tomas={s:'declined',reason:'Two hour drive each way for me',wants:'j7'};
+const rs=(j,c)=>(j.rsvp&&j.rsvp[c])||{s:'pending'};
+const active=role=>PEOPLE.filter(p=>!p.inactive&&(!role||p.role===role));
+function conflicts(pid,job){
+  const out=[];
+  if(!job.date)return out;
+  if((unavail[pid]||[]).includes(job.date))out.push('marked unavailable on '+fmtDate(job.date));
+  jobs.forEach(o=>{if(o.id!==job.id&&o.date===job.date&&o.crew.includes(pid)&&rs(o,pid).s!=='declined'&&o.start<job.end&&job.start<o.end)out.push('also on '+o.title+', '+fmtTime(o.start)+' to '+fmtTime(o.end));});
+  return out;
+}
+function allTasks(){
+  const out=[];
+  jobs.forEach(j=>(j.deliverables||[]).forEach((x,i)=>{if(!x.done)out.push({j:j,x:x,i:i,over:!!x.due&&x.due<TODAY});}));
+  return out.sort((a,b)=>(a.x.due||'9999').localeCompare(b.x.due||'9999'));
+}
+function visibleJobs(){return jobs.filter(j=>isAdmin()||j.crew.includes(state.who)).sort((a,b)=>(a.date+a.start).localeCompare(b.date+b.start));}
+function unseen(job,who){return updates.filter(u=>u.jobId===job.id&&!u.seen[who]);}
+function mapsUrl(j){return 'https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(j.address);}
+function gcalUrl(j){const d=j.date.replace(/-/g,''),t=s=>s.replace(':','')+'00';
+  const q=new URLSearchParams({action:'TEMPLATE',text:j.title,dates:d+'T'+t(j.start)+'/'+d+'T'+t(j.end),location:j.address,
+    details:'Set up: '+j.setup+'\nOn-site contact: '+j.contact.name+', '+j.contact.phone});
+  return 'https://calendar.google.com/calendar/render?'+q.toString();}
+function names(ids){const n=ids.map(i=>P(i).name);return n.length<2?n.join(''):n.slice(0,-1).join(', ')+' and '+n[n.length-1];}
+
+function renderTabs(){
+  const n=isAdmin()?0:visibleJobs().reduce((s,j)=>s+unseen(j,state.who).length,0);
+  const od=isAdmin()?allTasks().filter(x=>x.over).length:0;
+  const t=(k,label,extra)=>'<button class="tab" data-act="tab" data-tab="'+k+'" aria-current="'+(state.tab===k&&!state.jobId&&!state.editing)+'">'+label+(extra||'')+'</button>';
+  document.getElementById('tabs').innerHTML=
+    t('jobs',isAdmin()?'All jobs':'My jobs')+
+    (isAdmin()?t('due','Tasks due',od?'<span class="count">'+od+'</span>':''):'')+
+    t('updates',isAdmin()?'Sent updates':'Updates',n?'<span class="count">'+n+'</span>':'')+
+    (isAdmin()?t('catalog','Task list')+t('equip','Equipment list')+t('team','Team')+'<span class="spacer"></span><button class="btn ghost small" data-act="import">Import from Google Calendar</button><button class="btn small" data-act="new">New job</button>':t('avail','Availability'));
+}
+
+function photoHtml(p,i,removable){
+  const inner=p.src?'<img src="'+p.src+'" alt="'+esc(p.cap)+'">'
+    :'<div class="img" style="background:linear-gradient(140deg,hsl('+p.h+' 34% 60%),hsl('+((p.h+45)%360)+' 32% 30%))">Example</div>';
+  return '<figure class="photo">'+inner+'<figcaption>'+esc(p.cap)+(removable?' <button type="button" class="linkbtn" data-act="rmphoto" data-i="'+i+'">Remove</button>':'')+'</figcaption></figure>';
+}
+
+function renderList(){
+  const list=visibleJobs();
+  if(!list.length) return '<p class="empty">No jobs assigned yet. New jobs appear here as soon as the studio adds you to one.</p>';
+  const need=isAdmin()?list.filter(j=>j.crew.some(c=>rs(j,c).s==='declined')).length:0;
+  const intro=need?'<section class="alert"><strong>'+need+(need>1?' jobs need':' job needs')+' a replacement photographer</strong><span>Open the job to see who declined and reassign it.</span></section>':'';
+  const outro=isAdmin()?'':'<section class="preview"><strong>Calendar sync</strong><span class="meta">In the real app you connect your calendar once. Every job you accept then appears in Google Calendar or Apple Calendar and updates itself when the studio changes it.</span></section>';
+  return '<div class="list">'+intro+list.map(j=>{
+    const x=pd(j.date),u=!isAdmin()&&unseen(j,state.who).length;
+    const waiting=isAdmin()?j.crew.filter(c=>unseen(j,c).length).length:0;
+    let tags=u?'<span class="pill">Updated</span>':'';
+    if(isAdmin()){const d=j.crew.filter(c=>rs(j,c).s==='declined').length,p=j.crew.filter(c=>rs(j,c).s==='pending').length;
+      if(j.draft)tags+='<span class="pill">Details needed</span>';
+      if(j.pending&&j.pending.length)tags+='<span class="pill">Unsent changes</span>';
+      if(j.deliverables&&j.deliverables.length)tags+='<span class="pill quiet">'+j.deliverables.filter(x=>x.done).length+' of '+j.deliverables.length+' tasks</span>';
+      const ov=(j.deliverables||[]).filter(x=>!x.done&&x.due&&x.due<TODAY).length;
+      if(ov)tags+='<span class="pill">'+ov+' overdue</span>';
+      if(j.crew.some(c=>rs(j,c).s!=='declined'&&conflicts(c,j).length))tags+='<span class="pill">Conflict</span>';
+      if(d)tags+='<span class="pill">'+d+' declined</span>';
+      if(p)tags+='<span class="pill quiet">'+p+' awaiting reply</span>';}
+    else{const s=rs(j,state.who).s;
+      if(s==='pending')tags+='<span class="pill">Reply needed</span>';
+      if(s==='declined')tags+='<span class="pill quiet">You declined</span>';}
+    return '<button class="job" data-act="open" data-id="'+j.id+'">'+
+      '<span class="dateblock"><span class="dow">'+DOW[x.getDay()]+'</span><span class="day">'+x.getDate()+'</span><span class="mon">'+MON[x.getMonth()]+'</span></span>'+
+      '<span class="jobmain"><span class="rowwrap"><h3>'+esc(j.title)+'</h3>'+tags+'</span>'+
+      '<span class="time">'+fmtTime(j.start)+' to '+fmtTime(j.end)+'</span>'+
+      '<span class="meta">'+esc(j.type)+' · '+esc(j.address.split(',').slice(-2,-1)[0]||j.address)+'</span>'+
+      '<span class="meta">'+esc(names(j.crew))+(waiting?' · <span class="unseen">'+waiting+' not seen latest update</span>':'')+'</span></span></button>';
+  }).join('')+outro+'</div>';
+}
+
+function previewHtml(u,j){
+  const line=j.title+' ('+fmtDate(j.date)+')';
+  const changes=u.changes.join('\n');
+  return '<section class="preview"><div><strong>Notification preview.</strong> '+esc(names(j.crew))+' would be notified.</div>'+
+    '<div class="msg"><span class="label">Email</span><strong>Updated: '+esc(line)+'</strong><span class="body">'+esc(changes)+'\nOpen the call sheet to see the full details.</span></div>'+
+    '<div class="msg"><span class="label">Text message</span><span class="body">Update for '+esc(line)+': '+esc(u.changes.join('; '))+'. Open your call sheet for details.</span></div>'+
+    '<div class="msg"><span class="label">Phone notification</span><strong>'+esc(j.title)+' changed</strong><span class="body">'+esc(u.changes[0])+(u.changes.length>1?' and '+(u.changes.length-1)+' more':'')+'</span></div>'+
+    '<p class="hint">Preview only. Their Google Calendar event would update at the same time.</p></section>';
+}
+
+const calEvents=[
+  {title:'Okonkwo family portraits',date:'2026-10-31',start:'10:00',end:'11:30',address:'Schiller Park, 1069 Jaeger Street, Columbus, OH 43206',pick:true},
+  {title:'Ridgeline Dental team photos',date:'2026-11-03',start:'08:00',end:'10:00',address:'',pick:true},
+  {title:'Dentist appointment',date:'2026-11-04',start:'14:00',end:'15:00',address:'',pick:false},
+  {title:'Hartwell engagement session',date:'2026-11-07',start:'16:30',end:'18:00',address:'',pick:true}
+];
+function renderImport(){
+  return '<section class="sheet"><div><button class="linkbtn" data-act="cancel">← Back to jobs</button></div>'+
+    '<header class="sheet-head"><h1>Import from Google Calendar</h1><p class="meta">Example events from a studio calendar. Tick the ones that are shoots. Each becomes a job with its name, date and times filled in, plus the address if the event has one. You add the rest.</p></header>'+
+    '<ul class="checks">'+calEvents.map((ev,i)=>'<li><label><input type="checkbox" id="imp'+i+'"'+(ev.done?' disabled':ev.pick?' checked':'')+'>'+
+      '<span style="text-decoration:none;color:inherit"><strong>'+esc(ev.title)+'</strong>'+(ev.done?' <span class="pill quiet">Imported</span>':'')+'<br><span class="time">'+fmtDate(ev.date)+' · '+fmtTime(ev.start)+' to '+fmtTime(ev.end)+'</span>'+
+      (ev.address?'<br><span class="meta">'+esc(ev.address)+'</span>':'')+'</span></label></li>').join('')+'</ul>'+
+    '<div class="actions"><button class="btn" data-act="importGo">Import selected</button><button class="btn ghost" data-act="cancel">Cancel</button></div></section>';
+}
+
+function rsvpHtml(j,me){
+  const r=rs(j,me);
+  const others=jobs.filter(o=>!o.draft&&o.id!==j.id&&o.date>=TODAY&&!o.crew.includes(me)).sort((a,b)=>a.date.localeCompare(b.date));
+  if(state.declining) return '<section class="alert"><strong>Decline this job</strong>'+
+    '<div class="field"><label class="label" for="declineReason">Reason for the studio (optional)</label><textarea id="declineReason"></textarea></div>'+
+    '<fieldset class="pick"><legend class="label">A job I could work instead (optional)</legend><label><input type="radio" name="wants" id="wantsNone" value="" checked><span>No request</span></label>'+
+    others.map(o=>'<label><input type="radio" name="wants" id="wants_'+o.id+'" value="'+o.id+'"><span><strong>'+esc(o.title)+'</strong><br><span class="time">'+fmtDate(o.date)+' · '+fmtTime(o.start)+' to '+fmtTime(o.end)+'</span><br><span class="meta">'+esc(o.address||'Address not set yet')+'</span></span></label>').join('')+
+    '</fieldset><span class="hint">The studio decides whether to move you.</span>'+
+    '<div class="actions"><button class="btn small" data-act="declineSend">Send decline</button><button class="btn ghost small" data-act="declineCancel">Cancel</button></div></section>';
+  if(r.s==='pending') return '<section class="alert"><strong>Can you take this job?</strong><span>The studio is waiting for your reply.</span>'+
+    '<div class="actions"><button class="btn small" data-act="accept">Accept</button><button class="btn ghost small" data-act="decline">I can\'t do it</button></div><span class="hint">When you decline you can ask for a different job instead.</span></section>';
+  if(r.s==='declined') return '<section class="alert"><strong>You declined this job</strong><span>The studio has been told and will reassign it.'+(r.wants&&J(r.wants)?' You asked to work '+esc(J(r.wants).title)+' instead'+(r.moved?', and the studio approved it.':'. The studio still has to approve that.'):'')+'</span>'+
+    '<div><button class="linkbtn" data-act="accept">I can do it after all</button></div></section>';
+  return '<p class="meta"><span class="seen">You accepted this job.</span> <button class="linkbtn" data-act="decline">Decline or ask for a different job</button></p>';
+}
+function addTasks(j,list){
+  if(!j.deliverables)j.deliverables=[];
+  list.map(s=>s.trim()).filter(Boolean).forEach(n=>{if(!j.deliverables.some(x=>x.name.toLowerCase()===n.toLowerCase()))j.deliverables.push({name:n,done:false,due:j.date?addDays(j.date,14):''});});
+}
+function renderSheet(){
+  const j=J(state.jobId);
+  const adm=isAdmin(),st={accepted:'accepted',declined:'declined',pending:'awaiting reply'};
+  const ppl=r=>j.crew.filter(c=>P(c).role===r).map(c=>P(c).name+(c===j.lead?' (lead)':'')+(adm?' – '+st[rs(j,c).s]:'')).join(', ')||'None assigned';
+  const tasks=j.deliverables||[];
+  return '<div class="sheet"><div><button class="linkbtn" data-act="sheetBack">← Back to the job</button></div>'+
+    '<p class="hint">Preview of the paper copy. Printing is switched off inside this prototype. The real app has a Print or save as PDF button that produces this page.</p>'+
+    '<article class="paper"><header class="sheet-head"><span class="label">'+(adm?'Office copy':'Call sheet')+' · '+esc(j.type)+'</span><h1>'+esc(j.title)+'</h1><p class="meta">'+esc(j.client)+'</p></header>'+
+    '<div class="calltimes"><div><span class="label">Date</span><span class="v">'+fmtDate(j.date)+'</span></div>'+
+    '<div><span class="label">Call time</span><span class="v">'+fmtTime(j.start)+'</span></div>'+
+    '<div><span class="label">Wrap</span><span class="v">'+fmtTime(j.end)+'</span></div></div>'+
+    '<dl class="kv"><dt>Address</dt><dd>'+esc(j.address)+'</dd><dt>Set up</dt><dd>'+esc(j.setup)+'</dd><dt>Parking and load-in</dt><dd>'+esc(j.access)+'</dd>'+
+    '<dt>Contact</dt><dd>'+esc(j.contact.name)+(j.contact.role?', '+esc(j.contact.role):'')+(j.contact.phone?' · '+esc(j.contact.phone):'')+'</dd>'+
+    '<dt>Photographers</dt><dd>'+esc(ppl('photographer'))+'</dd><dt>Assistants</dt><dd>'+esc(ppl('assistant'))+'</dd></dl>'+
+    '<section class="sec"><h2>Equipment to pack</h2>'+(j.equipment.length?'<ul class="boxes">'+j.equipment.map(e=>'<li><span class="box"></span><span>'+esc(e)+'</span></li>').join('')+'</ul>':'<p class="meta">No equipment listed yet.</p>')+'</section>'+
+    (j.notes?'<section class="sec"><h2>Notes</h2><p style="white-space:pre-wrap">'+esc(j.notes)+'</p></section>':'')+
+    (j.photos.length?'<section class="sec"><h2>Sample photos</h2><div class="photos">'+j.photos.map((p,i)=>photoHtml(p,i,false)).join('')+'</div></section>':'')+
+    (adm?'<section class="sec"><h2>Tasks</h2>'+(tasks.length?'<ul class="boxes">'+tasks.map(x=>'<li><span class="box">'+(x.done?'✓':'')+'</span><span>'+esc(x.name)+
+      (x.done?' <span class="meta">· done '+(x.date?fmtDate(x.date):'')+' by '+esc(x.by)+'</span>':(x.due?' <span class="meta">· due '+fmtDate(x.due)+'</span>':''))+'</span></li>').join('')+'</ul>':'<p class="meta">No tasks on this job.</p>')+'</section>'+
+      '<div class="sign"><span>Packed by</span><span>Date</span><span>Checked by</span></div>':'')+'</article></div>';
+}
+function pickHtml(j,pre){
+  const have=(j.deliverables||[]).map(x=>x.name.toLowerCase());
+  const left=catalog.filter(n=>!have.includes(n.toLowerCase()));
+  if(!left.length)return '<p class="hint">Every task on your task list is already on this job.</p>';
+  return '<fieldset class="pick"><legend class="label">Choose from your task list</legend>'+
+    left.map((n,i)=>'<label><input type="checkbox" id="'+pre+i+'" data-cat="'+esc(n)+'"><span>'+esc(n)+'</span></label>').join('')+'</fieldset>';
+}
+const picked=()=>Array.from(document.querySelectorAll('input[data-cat]:checked')).map(x=>x.dataset.cat);
+function renderCatalog(){
+  return '<section class="sheet"><header class="sheet-head"><h1>Task list</h1><p class="meta">Everything you offer schools and leagues. On each job you tick the ones that apply.</p></header>'+
+    (catalog.length?'<ul class="deliv">'+catalog.map((n,i)=>'<li><span>'+esc(n)+'</span><button class="linkbtn" data-act="catRm" data-i="'+i+'">Remove</button></li>').join('')+'</ul>':'<p class="empty">No tasks yet. Add the first ones below.</p>')+
+    '<div class="field"><label class="label" for="catNew">Add to the list</label><textarea id="catNew" placeholder="One task per line."></textarea><span class="hint">Removing a task here does not take it off jobs that already have it.</span></div>'+
+    '<div class="actions"><button class="btn small" data-act="catAdd">Add to list</button></div></section>';
+}
+function renderDue(){
+  const list=allTasks();
+  const row=t=>'<li><label><input type="checkbox" id="due_'+t.j.id+'_'+t.i+'" data-delj="'+t.j.id+'" data-del="'+t.i+'"><span><strong>'+esc(t.x.name)+'</strong><br><span class="meta">'+esc(t.j.title)+'</span></span></label>'+
+    '<span class="rowwrap">'+(t.over?'<span class="pill">Overdue</span>':'')+'<span class="time">'+(t.x.due?'Due '+fmtDate(t.x.due):'No due date')+'</span><button class="linkbtn" data-act="open" data-id="'+t.j.id+'">Open job</button></span></li>';
+  return '<section class="sheet"><header class="sheet-head"><h1>Tasks due</h1><p class="meta">Every unfinished task across all jobs, soonest first. Ticking one records today\'s date and your name.</p></header>'+
+    (list.length?'<ul class="deliv">'+list.map(row).join('')+'</ul>':'<p class="empty">Nothing outstanding. Tasks you add to jobs show up here until they are ticked off.</p>')+'</section>';
+}
+function renderEquip(){
+  return '<section class="sheet"><header class="sheet-head"><h1>Equipment list</h1><p class="meta">Everything the studio owns or brings. On each job you tick items or drop in a whole kit instead of typing.</p></header>'+
+    '<section class="sec"><h2>Items</h2><ul class="deliv">'+equipCatalog.map((n,i)=>'<li><span>'+esc(n)+'</span><button class="linkbtn" data-act="eqRm" data-i="'+i+'">Remove</button></li>').join('')+'</ul>'+
+    '<div class="field"><label class="label" for="eqNew">Add items</label><textarea id="eqNew" placeholder="One item per line."></textarea></div><div class="actions"><button class="btn small" data-act="eqAdd">Add to list</button></div></section>'+
+    '<section class="sec"><h2>Kits</h2><p class="hint">A kit is a saved group of items you can add to a job in one tap.</p>'+
+    kits.map((k,i)=>'<div class="note"><strong>'+esc(k.name)+'</strong> <button class="linkbtn" data-act="kitRm" data-i="'+i+'">Remove kit</button>\n'+esc(k.items.join(', '))+'</div>').join('')+
+    '<div class="field"><label class="label" for="kitName">New kit name</label><input id="kitName"></div>'+
+    '<div class="field"><label class="label" for="kitItems">Items in the kit</label><textarea id="kitItems" placeholder="One item per line."></textarea></div>'+
+    '<div class="actions"><button class="btn small" data-act="kitAdd">Save kit</button></div></section></section>';
+}
+function equipPickHtml(){
+  return '<details class="pickbox"><summary>Pick from your equipment list</summary>'+
+    '<div class="rowwrap"><select id="fKit" aria-label="Kit">'+kits.map((k,i)=>'<option value="'+i+'">'+esc(k.name)+'</option>').join('')+'</select><button type="button" class="btn ghost small" data-act="eqAddKit">Add kit</button></div>'+
+    '<fieldset class="pick"><legend class="label">Single items</legend>'+equipCatalog.map((n,i)=>'<label><input type="checkbox" id="fEq'+i+'" data-eq="'+esc(n)+'"><span>'+esc(n)+'</span></label>').join('')+'</fieldset>'+
+    '<div><button type="button" class="btn ghost small" data-act="eqAddPicked">Add ticked items</button></div></details>';
+}
+function appendEquip(items){
+  const ta=document.getElementById('fEquip'),cur=ta.value.split('\n').map(s=>s.trim()).filter(Boolean);
+  items.forEach(n=>{if(!cur.some(c=>c.toLowerCase()===n.toLowerCase()))cur.push(n);});
+  ta.value=cur.join('\n');
+}
+function renderTeam(){
+  const off=p=>(unavail[p.id]||[]).filter(d=>d>=TODAY).sort().map(fmtDate).join(', ');
+  return '<section class="sheet"><header class="sheet-head"><h1>Team</h1><p class="meta">Only people listed here can sign in. Each person signs in with Google using the email shown.</p></header>'+
+    '<ul class="deliv">'+OFFICE.map(o=>'<li><span><strong>'+esc(o.short)+'</strong><br><span class="meta">Office</span></span></li>').join('')+
+    active().map(p=>'<li><span><strong>'+esc(p.name)+'</strong><br><span class="meta">'+(p.role==='assistant'?'Assistant':'Photographer')+' · '+esc(p.email)+(off(p)?'<br>Unavailable: '+esc(off(p)):'')+'</span></span><button class="linkbtn" data-act="teamRm" data-id="'+p.id+'">Remove access</button></li>').join('')+'</ul>'+
+    '<section class="sec"><h2>Add someone</h2><div class="grid2"><div class="field"><label class="label" for="tName">Name</label><input id="tName"></div><div class="field"><label class="label" for="tEmail">Email</label><input id="tEmail" type="email"></div>'+
+    '<div class="field"><label class="label" for="tRole">Role</label><select id="tRole"><option value="photographer">Photographer</option><option value="assistant">Assistant</option></select></div></div>'+
+    '<p class="hint" id="teamErr" role="alert"></p><div class="actions"><button class="btn small" data-act="teamAdd">Add and send invite</button></div></section>'+
+    '<section class="sec"><h2>Automatic reminders</h2>'+
+    '<label class="rowwrap"><input type="checkbox" id="rDay"'+(reminders.dayBefore?' checked':'')+'> Remind everyone on a job the day before at <input class="inp" type="time" id="rTime" value="'+reminders.time+'" aria-label="Reminder time"></label>'+
+    '<label class="rowwrap"><input type="checkbox" id="rNudge"'+(reminders.nudge?' checked':'')+'> Nudge anyone who has not accepted or declined after <select class="inp" id="rDays" aria-label="Days before nudging">'+[1,2,3,5].map(n=>'<option value="'+n+'"'+(reminders.nudgeDays===n?' selected':'')+'>'+n+(n>1?' days':' day')+'</option>').join('')+'</select></label>'+
+    '<p class="hint">Reminders go by email, text and phone notification, the same as updates. Nothing is sent from this prototype.</p></section></section>';
+}
+function renderAvail(){
+  const mine=(unavail[state.who]||[]).slice().sort();
+  return '<section class="sheet"><header class="sheet-head"><h1>Availability</h1><p class="meta">Mark the days you cannot work. The studio sees a warning before assigning you on those days.</p></header>'+
+    (mine.length?'<ul class="deliv">'+mine.map(d=>'<li><span class="time">'+fmtDate(d)+', '+d.slice(0,4)+'</span><button class="linkbtn" data-act="offRm" data-d="'+d+'">Remove</button></li>').join('')+'</ul>':'<p class="empty">No days off marked.</p>')+
+    '<div class="rowwrap"><input class="inp" type="date" id="offDate" aria-label="Day you cannot work"><button class="btn small" data-act="offAdd">Mark unavailable</button></div></section>';
+}
+function updateConflicts(){
+  const box=document.getElementById('conflictBox');if(!box)return;
+  const g=id=>document.getElementById(id).value;
+  const job={id:state.editing==='new'?null:state.editing,date:g('fDate'),start:g('fStart'),end:g('fEnd')};
+  const ids=PEOPLE.filter(p=>{const c=document.getElementById('fCrew_'+p.id);return c&&c.checked;}).map(p=>p.id);
+  [g('fLead'),g('fAsst1'),g('fAsst2')].forEach(a=>{if(a&&!ids.includes(a))ids.push(a);});
+  const rows=[];
+  ids.forEach(id=>conflicts(id,job).forEach(c=>rows.push('<li><strong>'+esc(P(id).name)+'</strong> is '+esc(c)+'</li>')));
+  box.innerHTML=rows.length?'<section class="alert"><strong>Scheduling conflict</strong><ul>'+rows.join('')+'</ul><span>You can still save, but check with them first.</span></section>':'';
+}
+function delivHtml(j){
+  const d=j.deliverables||[];
+  return '<section class="sec"><h2>Tasks</h2><p class="hint">'+d.filter(x=>x.done).length+' of '+d.length+' complete. Ticking an item records today\'s date and who ticked it. Change the date if it was finished on another day.</p><ul class="deliv">'+
+    d.map((x,i)=>'<li><label><input type="checkbox" id="del'+i+'" data-del="'+i+'"'+(x.done?' checked':'')+'><span>'+esc(x.name)+'</span></label>'+
+      (x.done?'<span class="rowwrap"><input class="inp" type="date" id="deld'+i+'" data-deldate="'+i+'" value="'+esc(x.date)+'" aria-label="Date completed for '+esc(x.name)+'"><span class="pill quiet">'+esc(x.ini)+'</span><span class="meta">'+esc(x.by)+'</span></span>'
+        :'<span class="rowwrap"><label class="meta" for="due'+i+'">Due</label><input class="inp" type="date" id="due'+i+'" data-deldue="'+i+'" value="'+esc(x.due||'')+'">'+(x.due&&x.due<TODAY?'<span class="pill">Overdue</span>':'')+'<button class="linkbtn" data-act="delRm" data-i="'+i+'">Remove</button></span>')+'</li>').join('')+
+    '</ul>'+pickHtml(j,'pk')+'<div class="field"><label class="label" for="delNew">One-off tasks for this job</label><textarea id="delNew" placeholder="One task per line. Paste a whole list to add them all at once."></textarea></div>'+
+    '<div class="actions"><button class="btn small" data-act="delAdd">Add to this job</button></div></section>';
+}
+function asstFields(j){
+  const cur=j.crew.filter(c=>P(c).role==='assistant');
+  const sel=(id,label,val)=>'<div class="field"><label class="label" for="'+id+'">'+label+'</label><select id="'+id+'"><option value="">None</option>'+
+    PEOPLE.filter(p=>p.role==='assistant'&&(!p.inactive||cur.includes(p.id))).map(p=>'<option value="'+p.id+'"'+(val===p.id?' selected':'')+'>'+esc(p.name)+'</option>').join('')+'</select></div>';
+  return '<div class="grid2">'+sel('fAsst1','Assistant',cur[0]||'')+sel('fAsst2','Second assistant',cur[1]||'')+'</div><div id="conflictBox"></div>'+
+    pickHtml(j,'fpk')+'<div class="field"><label class="label" for="fTasks">One-off tasks for this job</label><textarea id="fTasks" placeholder="One task per line. Paste a whole list to add them all at once."></textarea>'+
+    (j.deliverables&&j.deliverables.length?'<span class="hint">Already on this job: '+j.deliverables.map(x=>esc(x.name)).join(', ')+'.</span>':'')+'</div>'+
+    '';
+}
+
+function renderJob(){
+  const j=J(state.jobId),me=state.who;
+  const mine=isAdmin()?[]:unseen(j,me);
+  const last=updates.filter(u=>u.jobId===j.id).slice(-1)[0];
+  let h='<article class="sheet"><div><button class="linkbtn" data-act="back">← Back to jobs</button></div>';
+  if(isAdmin()&&state.sent){const u=updates.find(x=>x.id===state.sent);if(u&&u.jobId===j.id)h+=previewHtml(u,j);}
+  if(mine.length) h+='<section class="alert"><strong>Changed since you last looked</strong><ul>'+
+    mine.map(u=>u.changes.map(c=>'<li>'+esc(c)+' <span class="meta">('+esc(u.at)+')</span></li>').join('')).join('')+
+    '</ul><div><button class="btn small" data-act="ack">Got it</button></div></section>';
+  if(isAdmin()&&j.pending&&j.pending.length)h+='<section class="alert"><strong>Saved but not sent yet</strong><ul>'+j.pending.map(c=>'<li>'+esc(c)+'</li>').join('')+'</ul>'+
+    '<span>'+(j.crew.length?'Tap Notify photographers and staff below to send these.':'Nobody is assigned yet, so there is no one to notify.')+'</span></section>';
+  if(!isAdmin())h+=rsvpHtml(j,me);
+  h+='<header class="sheet-head"><span class="label">'+esc(j.type)+' · '+esc(j.client)+'</span><h1>'+esc(j.title)+'</h1></header>'+
+    '<div class="calltimes"><div><span class="label">Date</span><span class="v">'+fmtDate(j.date)+'</span></div>'+
+    '<div><span class="label">Call time</span><span class="v">'+fmtTime(j.start)+'</span></div>'+
+    '<div><span class="label">Wrap</span><span class="v">'+fmtTime(j.end)+'</span></div></div>'+
+    '<div class="actions"><a class="btn" href="'+mapsUrl(j)+'" target="_blank" rel="noopener">Get directions</a>'+
+    '<a class="btn ghost" href="'+gcalUrl(j)+'" target="_blank" rel="noopener">Add to Google Calendar</a>'+
+    '<button class="btn ghost" data-act="sheet">Paper copy</button>'+(isAdmin()?'<button class="btn ghost" data-act="edit">Edit job</button><button class="btn ghost" data-act="dup">Duplicate</button>'+(j.crew.length?'<button class="btn ghost" data-act="notifyNow">Notify photographers and staff</button>':''):'')+'</div>';
+  if(reminders.dayBefore&&j.date>=TODAY)h+='<p class="hint">Automatic reminder goes out '+fmtDate(addDays(j.date,-1))+' at '+fmtTime(reminders.time)+'.</p>';
+  h+='<section class="sec"><h2>Where</h2><dl class="kv"><dt>Address</dt><dd>'+esc(j.address)+'</dd>'+
+    '<dt>Set up</dt><dd>'+esc(j.setup)+'</dd><dt>Parking and load-in</dt><dd>'+esc(j.access)+'</dd></dl></section>';
+  h+='<section class="sec"><h2>On-site contact</h2><dl class="kv"><dt>Name</dt><dd>'+esc(j.contact.name)+(j.contact.role?', '+esc(j.contact.role):'')+'</dd>'+
+    '<dt>Phone</dt><dd><span class="sel" id="phone">'+esc(j.contact.phone)+'</span> <button class="linkbtn" data-act="copy">Copy</button></dd></dl></section>';
+  h+='<section class="sec"><h2>Equipment</h2>'+(isAdmin()?'<ul class="plain">'+j.equipment.map(e=>'<li>'+esc(e)+'</li>').join('')+'</ul>'
+    :'<ul class="checks">'+j.equipment.map((e,i)=>{const k=me+'|'+j.id+'|'+e;
+      return '<li><label><input type="checkbox" id="eq'+i+'" data-pack="'+esc(k)+'"'+(state.packed[k]?' checked':'')+'><span>'+esc(e)+'</span></label></li>';}).join('')+'</ul><p class="hint">Tick items off as you pack. Only you see your ticks.</p>')+'</section>';
+  h+='<section class="sec"><h2>Who is on this job</h2><ul class="crew">'+j.crew.slice().sort((a,b)=>P(a).role===P(b).role?0:P(a).role==='photographer'?-1:1).map(c=>{
+    const r=rs(j,c);
+    let s=r.s==='accepted'?'<span class="seen">Accepted</span>':r.s==='declined'?'<span class="unseen">Declined'+(isAdmin()&&r.reason?': '+esc(r.reason):'')+'</span>':'<span class="unseen">Awaiting reply</span>';
+    if(isAdmin()&&last&&r.s!=='declined') s+=last.seen[c]?'<span class="seen">Seen latest update</span>':'<span class="unseen">Not seen latest update</span>';
+    if(isAdmin()&&r.s!=='declined'){const cf=conflicts(c,j);if(cf.length)s+='<span class="unseen">Conflict: '+esc(cf.join('; '))+'</span>';}
+    if(isAdmin()&&r.s==='declined'){
+      const w=r.wants&&J(r.wants);
+      if(w)s+='<span class="meta">'+(r.moved?'Moved to ':'Asked to work ')+esc(w.title)+', '+fmtDate(w.date)+(r.moved?'':' instead')+'</span>'+
+        (r.moved?'':'<button class="btn small" data-act="approveMove" data-id="'+c+'">Approve move</button>');
+      const free=PEOPLE.filter(p=>!p.inactive&&p.role===P(c).role&&!j.crew.includes(p.id));
+      s+=free.length?'<span class="rowwrap"><select id="rep_'+c+'" aria-label="Replacement for '+esc(P(c).name)+'">'+free.map(p=>'<option value="'+p.id+'">'+esc(p.name)+(conflicts(p.id,j).length?' (conflict)':'')+'</option>').join('')+'</select><button class="btn small" data-act="reassign" data-id="'+c+'">Reassign</button></span>'
+        :'';
+      s+='<button class="btn ghost small" data-act="removeCrew" data-id="'+c+'">Remove from job</button>';
+    }
+    return '<li><span>'+esc(P(c).name)+(c===me?' (you)':'')+'</span><span class="meta">'+(P(c).role==='assistant'?'Assistant':'Photographer')+'</span>'+(c===j.lead?'<span class="pill quiet">Lead</span>':'')+s+'</li>';}).join('')+'</ul></section>';
+  if(isAdmin())h+=delivHtml(j);
+  h+='<section class="sec"><h2>Notes</h2><div class="note">'+esc(j.notes||'No notes yet.')+'</div></section>';
+  h+='<section class="sec"><h2>Sample photos</h2><p class="hint">Reference shots for the look to aim for on this job.</p>'+
+    (j.photos.length?'<div class="photos">'+j.photos.map((p,i)=>photoHtml(p,i,false)).join('')+'</div>':'<p class="meta">None added yet.</p>')+'</section>';
+  return h+'</article>';
+}
+
+function renderEdit(){
+  const isNew=state.editing==='new';
+  const src=isNew&&state.dupFrom?J(state.dupFrom):null;
+  const j=src?Object.assign({},src,{title:src.title+' (copy)',date:'',deliverables:(src.deliverables||[]).map(x=>({name:x.name,done:false}))}):isNew?{title:'',client:'',type:'',date:'',start:'09:00',end:'12:00',address:'',setup:'',access:'',contact:{name:'',role:'',phone:''},equipment:[],lead:'',crew:[],notes:''}:J(state.editing);
+  const f=(id,label,val,attrs)=>'<div class="field"><label class="label" for="'+id+'">'+label+'</label><input id="'+id+'" value="'+esc(val)+'" '+(attrs||'')+'></div>';
+  const ta=(id,label,val,hint)=>'<div class="field"><label class="label" for="'+id+'">'+label+'</label><textarea id="'+id+'">'+esc(val)+'</textarea>'+(hint?'<span class="hint">'+hint+'</span>':'')+'</div>';
+  return '<form id="jobForm" novalidate><div><button type="button" class="linkbtn" data-act="cancel">← Cancel</button></div>'+
+    '<h1>'+(isNew?'New job':'Edit job')+'</h1>'+
+    (src?'<p class="hint">Copied from '+esc(src.title)+'. Set the new date, then change anything that differs.</p>':'')+
+    f('fTitle','Job name',j.title,'required')+
+    '<div class="grid2">'+f('fClient','Client',j.client)+f('fType','Type of shoot',j.type)+'</div>'+
+    '<div class="grid2">'+f('fDate','Date',j.date,'type="date" required')+f('fStart','Call time',j.start,'type="time" required')+f('fEnd','Wrap',j.end,'type="time" required')+'</div>'+
+    f('fAddress','Address',j.address)+
+    ta('fSetup','Where to set up',j.setup)+
+    ta('fAccess','Parking and load-in',j.access)+
+    '<div class="grid2">'+f('fCName','Contact name',j.contact.name)+f('fCRole','Contact role',j.contact.role)+f('fCPhone','Contact phone',j.contact.phone,'type="tel"')+'</div>'+
+    ta('fEquip','Equipment',j.equipment.join('\n'),'One item per line.')+equipPickHtml()+
+    '<fieldset><legend class="label">Photographers</legend>'+PEOPLE.filter(p=>p.role==='photographer'&&(!p.inactive||j.crew.includes(p.id))).map(p=>'<label><input type="checkbox" id="fCrew_'+p.id+'" value="'+p.id+'"'+(j.crew.includes(p.id)?' checked':'')+'> '+esc(p.name)+'</label>').join('')+'</fieldset>'+
+    '<div class="field"><label class="label" for="fLead">Lead photographer</label><select id="fLead"><option value="">No lead</option>'+PEOPLE.filter(p=>p.role==='photographer'&&(!p.inactive||j.lead===p.id)).map(p=>'<option value="'+p.id+'"'+(j.lead===p.id?' selected':'')+'>'+esc(p.name)+'</option>').join('')+'</select></div>'+
+    asstFields(j)+
+    ta('fNotes','Notes',j.notes)+
+    '<div class="field"><span class="label">Sample photos</span><div class="photos" id="draftPhotos"></div>'+
+    '<label class="btn ghost small" for="fPhotos" style="align-self:flex-start">Add photos</label><input id="fPhotos" type="file" accept="image/*" multiple hidden></div>'+
+    '<p class="hint" id="formErr" role="alert"></p>'+
+    '<div class="actions"><button class="btn" type="submit" data-notify="0">Save job</button><button class="btn" type="submit" data-notify="1">Save and notify photographers and staff</button><button type="button" class="btn ghost" data-act="cancel">Cancel</button></div>'+
+    '<p class="hint">Save job sends nothing. The changes are held until you notify from the job page or use Save and notify.</p></form>';
+}
+function renderDraftPhotos(){const el=document.getElementById('draftPhotos');if(el)el.innerHTML=state.draftPhotos.map((p,i)=>photoHtml(p,i,true)).join('');}
+
+function renderUpdates(){
+  const ids=visibleJobs().map(j=>j.id);
+  const list=updates.filter(u=>ids.includes(u.jobId)).slice().reverse();
+  if(!list.length) return '<p class="empty">No changes yet. When a job you are on changes, it shows up here.</p>';
+  return '<div class="feed">'+list.map(u=>{const j=J(u.jobId);
+    const status=isAdmin()?'<span class="meta">'+j.crew.map(c=>esc(P(c).name)+': '+(u.seen[c]?'<span class="seen">seen</span>':'<span class="unseen">not seen</span>')).join(' · ')+'</span>'
+      :(u.seen[state.who]?'':'<span><span class="pill">New</span></span>');
+    return '<article>'+status+'<span class="meta">'+esc(u.at)+'</span><h3>'+esc(j.title)+' <span class="meta">'+fmtDate(j.date)+'</span></h3>'+
+      '<ul class="plain">'+u.changes.map(c=>'<li>'+esc(c)+'</li>').join('')+'</ul><div><button class="linkbtn" data-act="open" data-id="'+j.id+'">Open call sheet</button></div></article>';}).join('')+'</div>';
+}
+
+function render(scroll){
+  renderTabs();
+  const m=document.getElementById('main');
+  m.innerHTML=state.importing?renderImport():state.editing?renderEdit():state.jobId?(state.sheet?renderSheet():renderJob()):state.tab==='updates'?renderUpdates():state.tab==='catalog'&&isAdmin()?renderCatalog():isAdmin()&&state.tab==='due'?renderDue():isAdmin()&&state.tab==='equip'?renderEquip():isAdmin()&&state.tab==='team'?renderTeam():!isAdmin()&&state.tab==='avail'?renderAvail():renderList();
+  if(state.editing){renderDraftPhotos();updateConflicts();}
+  if(scroll)window.scrollTo(0,0);
+}
+
+function diff(a,b){
+  const c=[];
+  const t=(label,x,y)=>{if(x!==y)c.push(label+': '+(x||'none')+' → '+(y||'none'));};
+  t('Job name',a.title,b.title);
+  t('Date',fmtDate(a.date),fmtDate(b.date));
+  t('Call time',fmtTime(a.start),fmtTime(b.start));
+  t('Wrap',fmtTime(a.end),fmtTime(b.end));
+  t('Address',a.address,b.address);
+  if(a.setup!==b.setup)c.push('Set-up location changed');
+  if(a.access!==b.access)c.push('Parking and load-in changed');
+  t('Contact',a.contact.name,b.contact.name);
+  t('Contact phone',a.contact.phone,b.contact.phone);
+  b.equipment.filter(e=>!a.equipment.includes(e)).forEach(e=>c.push('Equipment added: '+e));
+  a.equipment.filter(e=>!b.equipment.includes(e)).forEach(e=>c.push('Equipment removed: '+e));
+  b.crew.filter(p=>!a.crew.includes(p)).forEach(p=>c.push(P(p).name+' added to the job'));
+  a.crew.filter(p=>!b.crew.includes(p)).forEach(p=>c.push(P(p).name+' removed from the job'));
+  if(a.lead!==b.lead&&b.lead)c.push('Lead photographer: '+P(b.lead).name);
+  if(a.notes!==b.notes)c.push('Notes changed');
+  if(b.photos.length>a.photos.length)c.push((b.photos.length-a.photos.length)+' sample photo(s) added');
+  if(b.photos.length<a.photos.length)c.push((a.photos.length-b.photos.length)+' sample photo(s) removed');
+  return c;
+}
+
+function save(notify){
+  const v=id=>document.getElementById(id).value.trim();
+  const err=document.getElementById('formErr');
+  if(!v('fTitle')||!v('fDate')||!v('fStart')||!v('fEnd')){err.textContent='Add a job name, date, call time and wrap time before saving.';return;}
+  let crew=PEOPLE.filter(p=>p.role==='photographer'&&(document.getElementById('fCrew_'+p.id)||{}).checked).map(p=>p.id);
+  const lead=v('fLead');
+  if(lead&&!crew.includes(lead))crew.unshift(lead);
+  [v('fAsst1'),v('fAsst2')].forEach(a=>{if(a&&!crew.includes(a))crew.push(a);});
+  const next={title:v('fTitle'),client:v('fClient'),type:v('fType')||'Shoot',date:v('fDate'),start:v('fStart'),end:v('fEnd'),address:v('fAddress'),
+    setup:v('fSetup'),access:v('fAccess'),contact:{name:v('fCName'),role:v('fCRole'),phone:v('fCPhone')},
+    equipment:v('fEquip').split('\n').map(s=>s.trim()).filter(Boolean),lead:lead,crew:crew,notes:v('fNotes'),photos:state.draftPhotos.slice()};
+  const prev=state.editing==='new'?{}:(J(state.editing).rsvp||{});
+  next.rsvp={};crew.forEach(c=>{next.rsvp[c]=prev[c]||{s:'pending'};});
+  next.deliverables=(state.editing==='new'?[]:(J(state.editing).deliverables||[])).slice();
+  if(state.editing==='new'&&state.dupFrom&&J(state.dupFrom))addTasks(next,(J(state.dupFrom).deliverables||[]).map(x=>x.name));
+  state.dupFrom=null;
+  addTasks(next,picked());
+  addTasks(next,v('fTasks').split('\n'));
+  let changes;
+  if(state.editing==='new'){next.id='j'+Date.now();jobs.push(next);changes=['New job assigned to you'];}
+  else{const old=J(state.editing);next.id=old.id;changes=(old.pending||[]).concat(diff(old,next));jobs[jobs.indexOf(old)]=next;}
+  changes=changes.filter((c,i)=>changes.indexOf(c)===i);
+  state.sent=null;
+  if(notify&&changes.length&&crew.length){const u={id:'u'+Date.now(),jobId:next.id,at:stamp(),changes:changes,seen:{}};updates.push(u);state.sent=u.id;next.pending=[];}
+  else next.pending=changes;
+  state.jobId=next.id;state.editing=null;render(true);
+}
+
+document.addEventListener('click',e=>{
+  const el=e.target.closest('[data-act]');if(!el)return;
+  const a=el.dataset.act;
+  if(a==='import'){state.importing=true;state.jobId=null;state.editing=null;state.sent=null;render(true);return;}
+  if(a==='importGo'){
+    calEvents.forEach((ev,i)=>{
+      if(ev.done||!document.getElementById('imp'+i).checked)return;
+      ev.done=true;
+      jobs.push({id:'j'+Date.now()+i,draft:true,title:ev.title,client:'',type:'Imported from Google Calendar',date:ev.date,start:ev.start,end:ev.end,address:ev.address,
+        setup:'',access:'',contact:{name:'',role:'',phone:''},equipment:[],lead:'',crew:[],notes:'',photos:[],rsvp:{}});
+    });
+    state.importing=false;state.tab='jobs';render(true);return;
+  }
+  state.importing=false;
+  if(a==='sheet'){state.sheet=true;render(true);return;}
+  state.sheet=false;
+  if(a==='sheetBack'){render(true);return;}
+  if(a==='tab'){state.tab=el.dataset.tab;state.jobId=null;state.editing=null;state.sent=null;render(true);}
+  else if(a==='open'){state.jobId=el.dataset.id;state.sent=null;state.declining=false;render(true);}
+  else if(a==='back'){state.jobId=null;state.sent=null;render(true);}
+  else if(a==='ack'){updates.forEach(u=>{if(u.jobId===state.jobId)u.seen[state.who]=true;});render(false);}
+  else if(a==='edit'){state.editing=state.jobId;state.draftPhotos=J(state.jobId).photos.slice();render(true);}
+  else if(a==='new'){state.editing='new';state.dupFrom=null;state.jobId=null;state.draftPhotos=[];render(true);}
+  else if(a==='dup'){state.dupFrom=state.jobId;state.editing='new';state.draftPhotos=J(state.jobId).photos.slice();state.jobId=null;render(true);}
+  else if(a==='eqRm'){equipCatalog.splice(Number(el.dataset.i),1);render(false);}
+  else if(a==='eqAdd'){
+    document.getElementById('eqNew').value.split('\n').map(s=>s.trim()).filter(Boolean).forEach(n=>{if(!equipCatalog.some(c=>c.toLowerCase()===n.toLowerCase()))equipCatalog.push(n);});
+    render(false);
+  }
+  else if(a==='kitRm'){kits.splice(Number(el.dataset.i),1);render(false);}
+  else if(a==='kitAdd'){
+    const n=document.getElementById('kitName').value.trim(),it=document.getElementById('kitItems').value.split('\n').map(s=>s.trim()).filter(Boolean);
+    if(n&&it.length){kits.push({name:n,items:it});render(false);}
+  }
+  else if(a==='eqAddKit'){const k=kits[Number(document.getElementById('fKit').value)];if(k)appendEquip(k.items);}
+  else if(a==='eqAddPicked'){const b=Array.from(document.querySelectorAll('input[data-eq]:checked'));appendEquip(b.map(x=>x.dataset.eq));b.forEach(x=>{x.checked=false;});}
+  else if(a==='offAdd'){
+    const d=document.getElementById('offDate').value;
+    if(d){const l=unavail[state.who]||(unavail[state.who]=[]);if(!l.includes(d))l.push(d);render(false);}
+  }
+  else if(a==='offRm'){unavail[state.who]=(unavail[state.who]||[]).filter(d=>d!==el.dataset.d);render(false);}
+  else if(a==='teamRm'){P(el.dataset.id).inactive=true;buildWho();render(false);}
+  else if(a==='teamAdd'){
+    const n=document.getElementById('tName').value.trim(),m=document.getElementById('tEmail').value.trim();
+    if(!n||m.indexOf('@')<1){document.getElementById('teamErr').textContent='Add a name and a valid email address.';}
+    else{PEOPLE.push({id:'p'+Date.now(),name:n,role:document.getElementById('tRole').value,email:m});buildWho();render(false);}
+  }
+  else if(a==='cancel'){state.editing=null;render(true);}
+  else if(a==='rmphoto'){state.draftPhotos.splice(Number(el.dataset.i),1);renderDraftPhotos();}
+  else if(a==='accept'){J(state.jobId).rsvp[state.who]={s:'accepted'};state.declining=false;render(false);}
+  else if(a==='decline'){state.declining=true;render(false);}
+  else if(a==='declineCancel'){state.declining=false;render(false);}
+  else if(a==='declineSend'){J(state.jobId).rsvp[state.who]={s:'declined',reason:document.getElementById('declineReason').value.trim(),wants:(document.querySelector('input[name="wants"]:checked')||{value:''}).value};state.declining=false;render(true);}
+  else if(a==='reassign'){
+    const j=J(state.jobId),out=el.dataset.id,inn=document.getElementById('rep_'+out).value;
+    j.crew=j.crew.map(c=>c===out?inn:c);delete j.rsvp[out];j.rsvp[inn]={s:'pending'};
+    if(j.lead===out)j.lead=inn;
+    const u={id:'u'+Date.now(),jobId:j.id,at:stamp(),changes:[P(inn).name+' added to the job',P(out).name+' removed from the job'],seen:{}};
+    updates.push(u);state.sent=u.id;render(true);
+  }
+  else if(a==='approveMove'){
+    const j=J(state.jobId),c=el.dataset.id,r=j.rsvp[c],w=J(r.wants);
+    if(!w.crew.includes(c))w.crew.push(c);
+    w.rsvp[c]={s:'accepted'};r.moved=true;
+    updates.push({id:'u'+Date.now(),jobId:w.id,at:stamp(),changes:[P(c).name+' added to the job'],seen:{}});
+    render(false);
+  }
+  else if(a==='removeCrew'){
+    const j=J(state.jobId),c=el.dataset.id;
+    j.crew=j.crew.filter(x=>x!==c);delete j.rsvp[c];if(j.lead===c)j.lead='';
+    if(j.crew.length)updates.push({id:'u'+Date.now(),jobId:j.id,at:stamp(),changes:[P(c).name+' removed from the job'],seen:{}});
+    render(false);
+  }
+  else if(a==='delRm'){J(state.jobId).deliverables.splice(Number(el.dataset.i),1);render(false);}
+  else if(a==='delAdd'){addTasks(J(state.jobId),picked().concat(document.getElementById('delNew').value.split('\n')));render(false);}
+  else if(a==='notifyNow'){
+    const j=J(state.jobId),ch=j.pending&&j.pending.length?j.pending:['Reminder: please review this call sheet'];
+    const u={id:'u'+Date.now(),jobId:j.id,at:stamp(),changes:ch,seen:{}};
+    updates.push(u);j.pending=[];state.sent=u.id;render(true);
+  }
+  else if(a==='catRm'){catalog.splice(Number(el.dataset.i),1);render(false);}
+  else if(a==='catAdd'){
+    document.getElementById('catNew').value.split('\n').map(s=>s.trim()).filter(Boolean).forEach(n=>{if(!catalog.some(c=>c.toLowerCase()===n.toLowerCase()))catalog.push(n);});
+    render(false);
+  }
+  else if(a==='copy'){
+    const span=document.getElementById('phone');
+    const done=()=>{el.textContent='Copied';};
+    const fallback=()=>{const r=document.createRange();r.selectNodeContents(span);const s=getSelection();s.removeAllRanges();s.addRange(r);el.textContent='Selected';};
+    try{navigator.clipboard.writeText(span.textContent).then(done,fallback);}catch(x){fallback();}
+  }
+});
+document.addEventListener('submit',e=>{if(e.target.id==='jobForm'){e.preventDefault();save(!!e.submitter&&e.submitter.dataset.notify==='1');}});
+document.addEventListener('change',e=>{
+  const t=e.target;
+  if(state.editing&&t.closest&&t.closest('#jobForm'))updateConflicts();
+  if(t.dataset&&t.dataset.pack){state.packed[t.dataset.pack]=t.checked;}
+  else if(t.dataset&&t.dataset.deldue!==undefined){J(state.jobId).deliverables[Number(t.dataset.deldue)].due=t.value;render(false);}
+  else if(t.id==='rDay'){reminders.dayBefore=t.checked;}
+  else if(t.id==='rTime'){reminders.time=t.value||'17:00';}
+  else if(t.id==='rNudge'){reminders.nudge=t.checked;}
+  else if(t.id==='rDays'){reminders.nudgeDays=Number(t.value);}
+  else if(t.dataset&&t.dataset.del!==undefined){
+    const x=J(t.dataset.delj||state.jobId).deliverables[Number(t.dataset.del)],o=OFFICE.find(p=>p.id===state.who);
+    x.done=t.checked;
+    if(x.done){x.date=todayISO();x.ini=o.ini;x.by=o.short;}
+    render(false);
+  }
+  else if(t.dataset&&t.dataset.deldate!==undefined){J(state.jobId).deliverables[Number(t.dataset.deldate)].date=t.value;}
+  else if(t.id==='fPhotos'){
+    Array.from(t.files).forEach(file=>{const r=new FileReader();
+      r.onload=()=>{state.draftPhotos.push({src:r.result,cap:file.name.replace(/\.[^.]+$/,'')});renderDraftPhotos();};
+      r.readAsDataURL(file);});
+    t.value='';
+  }
+  else if(t.id==='whoSel'){state.importing=false;state.who=t.value;state.jobId=null;state.editing=null;state.sent=null;state.tab='jobs';render(true);}
+});
+
+function buildWho(){document.getElementById('whoSel').innerHTML='<optgroup label="Studio">'+OFFICE.map(o=>'<option value="'+o.id+'"'+(o.id===state.who?' selected':'')+'>'+esc(o.name)+'</option>').join('')+'</optgroup><optgroup label="Photographers and assistants">'+
+  active().map(p=>'<option value="'+p.id+'"'+(p.id===state.who?' selected':'')+'>'+esc(p.name)+'</option>').join('')+'</optgroup>';}
+buildWho();
+render(false);
+</script>

@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "prototype",
+      "runtimeExecutable": "powershell",
+      "runtimeArgs": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "C:\\Users\\ttmac\\Projects\\Photographer Call Sheets\\.claude\\serve.ps1"],
+      "port": 8765
+    }
+  ]
+}
