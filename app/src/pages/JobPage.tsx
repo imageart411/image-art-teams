@@ -98,11 +98,12 @@ export default function JobPage() {
         <div><span className="label">Wrap</span><span className="v">{fmtTime(job.end_time)}</span></div>
       </div>
 
-      {job.address && (
-        <div className="actions">
+      <div className="actions">
+        {job.address && (
           <a className="btn" href={directionsUrl(job.address)} target="_blank" rel="noopener">Get directions</a>
-        </div>
-      )}
+        )}
+        {office && <Link className="btn ghost" to={`/jobs/${job.id}/edit`}>Edit job</Link>}
+      </div>
 
       <section className="sec">
         <h2>Where</h2>
