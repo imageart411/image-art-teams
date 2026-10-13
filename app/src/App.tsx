@@ -27,7 +27,7 @@ function Shell() {
   if (!configured)
     return (
       <Gate>
-        <p>The app is not connected to its database yet. Add the Project URL and publishable key to app/.env.local, then restart.</p>
+        <p>The app is not connected to its database. The Project URL or publishable key is missing or not in the right form.</p>
       </Gate>
     )
   if (loading) return <Gate><p>Loading…</p></Gate>
