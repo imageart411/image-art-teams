@@ -14,6 +14,9 @@ const blank = {
 }
 type Fields = typeof blank
 
+const PLACE_KEYS = ['address', 'setup', 'access', 'contact_name', 'contact_role', 'contact_phone'] as const
+type Place = Pick<Fields, 'client' | (typeof PLACE_KEYS)[number]>
+
 interface Kit {
   name: string
   items: string[]
@@ -47,6 +50,8 @@ export default function JobForm() {
   const [assistants, setAssistants] = useState(['', ''])
   const [orig, setOrig] = useState<Original | null>(null)
   const [copiedFrom, setCopiedFrom] = useState('')
+  const [places, setPlaces] = useState<Record<string, Place>>({})
+  const [autoFilled, setAutoFilled] = useState<Place | null>(null)
 
   const [equipCatalog, setEquipCatalog] = useState<string[]>([])
   const [kits, setKits] = useState<Kit[]>([])
@@ -91,6 +96,21 @@ export default function JobForm() {
         })),
       )
       setTaskCatalog((taskCatRes.data ?? []).map((r) => r.name as string))
+
+      // Remember each client's most recent details so typing the name fills the rest.
+      const placeRes = await supabase
+        .from('jobs')
+        .select('client,address,setup,access,contact_name,contact_role,contact_phone')
+        .neq('client', '')
+        .order('shoot_date', { ascending: false })
+        .limit(500)
+      if (cancelled) return
+      const known: Record<string, Place> = {}
+      for (const r of (placeRes.data ?? []) as Place[]) {
+        const key = r.client.trim().toLowerCase()
+        if (!known[key]) known[key] = r
+      }
+      setPlaces(known)
 
       const sourceId = id ?? from
       if (sourceId) {
@@ -163,6 +183,19 @@ export default function JobForm() {
   // Someone whose access was removed stays selectable only on jobs they are already on.
   const pick = (role: Person['role']) =>
     people.filter((p) => p.role === role && (p.active || orig?.assigned.includes(p.id)))
+
+  // Typing a known client fills its address and contact, without overwriting anything typed by hand.
+  function setClient(value: string) {
+    const next = { ...f, client: value }
+    const match = places[value.trim().toLowerCase()]
+    if (match) {
+      for (const k of PLACE_KEYS) {
+        if (!f[k] || f[k] === autoFilled?.[k]) next[k] = match[k]
+      }
+      setAutoFilled(match)
+    }
+    setF(next)
+  }
 
   function appendEquipment(items: string[]) {
     const cur = lines(equipment)
@@ -315,7 +348,19 @@ export default function JobForm() {
       <h1>{id ? 'Edit job' : 'New job'}</h1>
       {copiedFrom && <p className="hint">Copied from {copiedFrom}. Set the new date, then change anything that differs.</p>}
       {text('title', 'Job name')}
-      <div className="grid2">{text('client', 'Client')}{text('shoot_type', 'Type of shoot')}</div>
+      <div className="grid2">
+        <div className="field">
+          <label className="label" htmlFor="client">Client, school or location</label>
+          <input id="client" list="clientList" autoComplete="off" value={f.client} onChange={(e) => setClient(e.target.value)} />
+          <datalist id="clientList">
+            {Object.values(places).map((p) => <option key={p.client} value={p.client}>{p.address}</option>)}
+          </datalist>
+          {autoFilled && autoFilled.client.trim().toLowerCase() === f.client.trim().toLowerCase() && (
+            <span className="hint">Address and contact filled in from the last job for {autoFilled.client}. Check they are still right.</span>
+          )}
+        </div>
+        {text('shoot_type', 'Type of shoot')}
+      </div>
       <div className="grid2">
         {text('shoot_date', 'Date', 'date')}
         {text('start_time', 'Call time', 'time')}
