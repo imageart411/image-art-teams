@@ -22,7 +22,7 @@ function Gate({ title, children }: { title?: string; children: ReactNode }) {
 }
 
 function Shell() {
-  const { loading, session, person, signIn, signOut } = useAuth()
+  const { loading, session, person, authError, signIn, signOut } = useAuth()
 
   if (!configured)
     return (
@@ -35,6 +35,7 @@ function Shell() {
     return (
       <Gate>
         <p>Job schedules and call sheets for the Image Art Studio team.</p>
+        {authError && <p className="alert" role="alert">Sign-in did not complete: {authError}</p>}
         <button className="btn" onClick={signIn}>Sign in with Google</button>
       </Gate>
     )

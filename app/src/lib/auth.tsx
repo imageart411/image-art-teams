@@ -9,8 +9,20 @@ interface AuthState {
   session: Session | null
   // The team record for the signed-in email. Null means the office has not added them.
   person: Person | null
+  // Reason a sign-in attempt came back without a session, if the provider gave one.
+  authError: string
   signIn: () => Promise<void>
   signOut: () => Promise<void>
+}
+
+// A failed sign-in returns to the app with the reason in the address.
+function readAuthError(): string {
+  for (const part of [window.location.hash.replace(/^#/, ''), window.location.search]) {
+    const p = new URLSearchParams(part)
+    const msg = p.get('error_description') ?? p.get('error')
+    if (msg) return msg
+  }
+  return ''
 }
 
 const AuthContext = createContext<AuthState | null>(null)
@@ -19,6 +31,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null)
   const [person, setPerson] = useState<Person | null>(null)
   const [loading, setLoading] = useState(true)
+  const [authError] = useState(readAuthError)
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -58,7 +71,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signIn = async () => {
     await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: window.location.origin },
+      // The trailing slash matters: Supabase's allowed pattern is "<address>/**".
+      options: { redirectTo: window.location.origin + '/' },
     })
   }
   const signOut = async () => {
@@ -66,7 +80,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ loading, session, person, signIn, signOut }}>
+    <AuthContext.Provider value={{ loading, session, person, authError, signIn, signOut }}>
       {children}
     </AuthContext.Provider>
   )
