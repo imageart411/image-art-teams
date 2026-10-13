@@ -2,13 +2,13 @@ import { useCallback, useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/auth'
+import { ROLE_LABEL, fmtDate, todayISO } from '../lib/types'
 import type { Person, Role } from '../lib/types'
-
-const ROLE_LABEL: Record<Role, string> = { office: 'Office', photographer: 'Photographer', assistant: 'Assistant' }
 
 export default function Team() {
   const { person: me } = useAuth()
   const [people, setPeople] = useState<Person[] | null>(null)
+  const [off, setOff] = useState<Record<string, string[]>>({})
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [initials, setInitials] = useState('')
@@ -16,7 +16,13 @@ export default function Team() {
   const [error, setError] = useState('')
 
   const load = useCallback(async () => {
-    const { data } = await supabase.from('people').select('id,email,name,initials,role,active').order('name')
+    const [{ data }, offRes] = await Promise.all([
+      supabase.from('people').select('id,email,name,initials,role,active').order('name'),
+      supabase.from('unavailability').select('person_id,day').gte('day', todayISO()).order('day'),
+    ])
+    const days: Record<string, string[]> = {}
+    for (const r of offRes.data ?? []) (days[r.person_id as string] ??= []).push(r.day as string)
+    setOff(days)
     setPeople((data ?? []) as Person[])
   }, [])
 
@@ -50,6 +56,11 @@ export default function Team() {
     load()
   }
 
+  async function setRoleFor(p: Person, next: Role) {
+    await supabase.from('people').update({ role: next }).eq('id', p.id)
+    load()
+  }
+
   if (!people) return <p className="empty">Loading team…</p>
 
   return (
@@ -65,12 +76,22 @@ export default function Team() {
             <span>
               <strong>{p.name}</strong>{p.id === me?.id ? ' (you)' : ''}
               <br />
-              <span className="meta">{ROLE_LABEL[p.role]} · {p.email}{p.active ? '' : ' · access removed'}</span>
+              <span className="meta">
+                {ROLE_LABEL[p.role]} · {p.email}{p.active ? '' : ' · access removed'}
+                {off[p.id] && <><br />Unavailable: {off[p.id].map(fmtDate).join(', ')}</>}
+              </span>
             </span>
             {p.id !== me?.id && (
-              <button className="linkbtn" onClick={() => setActive(p, !p.active)}>
-                {p.active ? 'Remove access' : 'Restore access'}
-              </button>
+              <span className="rowwrap">
+                <select className="inp" aria-label={`Role for ${p.name}`} value={p.role} onChange={(e) => setRoleFor(p, e.target.value as Role)}>
+                  <option value="photographer">Photographer</option>
+                  <option value="assistant">Assistant</option>
+                  <option value="office">Office (full access)</option>
+                </select>
+                <button className="linkbtn" onClick={() => setActive(p, !p.active)}>
+                  {p.active ? 'Remove access' : 'Restore access'}
+                </button>
+              </span>
             )}
           </li>
         ))}
